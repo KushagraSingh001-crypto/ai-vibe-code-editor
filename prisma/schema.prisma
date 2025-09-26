@@ -27,10 +27,11 @@ model User {
   accounts Account[]
   role     UserRole  @default(USER)
 
-  myPlayground Playground[]
+  myPlayground     Playground[]
+  staredPlayground StarMark[]
 
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Account {
@@ -63,15 +64,27 @@ enum Templates {
 }
 
 model Playground {
-  id            String         @id @default(cuid()) @map("_id")
-  title         String
-  description   String?
-  template      Templates      @default(REACT)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  
-  userId        String
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String     @id @default(cuid()) @map("_id")
+  title       String
+  description String?
+  template    Templates  @default(REACT)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  Starmark    StarMark[]
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   // todo templateFiles
 }
 
+model StarMark {
+  id           String     @id @default(cuid()) @map("_id")
+  userId       String
+  playgroundId String
+  isMarked     Boolean
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playground   Playground @relation(fields: [playgroundId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, playgroundId])
+}
