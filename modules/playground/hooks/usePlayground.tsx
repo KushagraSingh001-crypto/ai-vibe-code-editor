@@ -6,7 +6,7 @@ import { getPlaygroundById, SaveUpdatedCode } from "../actions";
 
 interface PlaygroundData {
     id: string;
-    name?: string,
+    title?: string,
     [key: string]: any
 }
 
@@ -19,7 +19,7 @@ interface UsePlaygroundReturn {
     saveTemplateData: (data: TemplateFolder) => Promise<void>;
 }
 
-export const UsePlayground = (id: string): UsePlaygroundReturn => {
+export const usePlayground = (id: string): UsePlaygroundReturn => {
     const [playgroundData, setPlaygroundData] = useState<PlaygroundData | null>(null);
     const [templateData, setTemplateData] = useState<TemplateFolder | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -82,14 +82,14 @@ export const UsePlayground = (id: string): UsePlaygroundReturn => {
 
     useEffect(() => {
         loadPlayground();
-      }, [loadPlayground]);
-    
-      return {
+    }, [loadPlayground]);
+
+    return {
         playgroundData,
         templateData,
         isLoading,
         error,
         loadPlayground,
         saveTemplateData,
-      };
+    };
 }
