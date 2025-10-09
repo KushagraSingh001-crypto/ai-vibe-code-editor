@@ -1,10 +1,6 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Terminal } from "xterm";
-import { FitAddon } from "xterm-addon-fit";
-import { WebLinksAddon } from "xterm-addon-web-links";
-import { SearchAddon } from "xterm-addon-search";
 import "xterm/css/xterm.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +28,9 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
   webContainerInstance
 }, ref) => {
   const terminalRef = useRef<HTMLDivElement>(null);
-  const term = useRef<Terminal | null>(null);
-  const fitAddon = useRef<FitAddon | null>(null);
-  const searchAddon = useRef<SearchAddon | null>(null);
+  const term = useRef<any | null>(null); // Use 'any' temporarily to avoid type issues before dynamic import
+  const fitAddon = useRef<any | null>(null);
+  const searchAddon = useRef<any | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -271,8 +267,14 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
     }
   }, [executeCommand, writePrompt]);
 
-  const initializeTerminal = useCallback(() => {
+  const initializeTerminal = useCallback(async () => {
     if (!terminalRef.current || term.current) return;
+
+    // Dynamically import xterm and addons to avoid server-side evaluation
+    const { Terminal } = await import("xterm");
+    const { FitAddon } = await import("xterm-addon-fit");
+    const { WebLinksAddon } = await import("xterm-addon-web-links");
+    const { SearchAddon } = await import("xterm-addon-search");
 
     const terminal = new Terminal({
       cursorBlink: true,
