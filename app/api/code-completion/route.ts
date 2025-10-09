@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
         // Build AI prompt
         const prompt = buildPrompt(context, suggestionType)
 
-        // Call AI service (replace with your AI service)
+        // Call AI service
         const suggestion = await generateSuggestion(prompt)
 
         return NextResponse.json({
@@ -130,23 +130,25 @@ function analyzeCodeContext(content: string, line: number, column: number, fileN
    */
   async function generateSuggestion(prompt: string): Promise<string> {
     try {
-      // Replace this with your actual AI service call
       const response = await fetch("http://localhost:11434/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "codellama:latest",
+          // FIX 1: Using the specific model tag you downloaded
+          model: "codellama:7b",
           prompt,
           stream: false,
           options: {
             temperature: 0.7,
-            max_tokens: 300,
+            // FIX 2: Ollama uses 'num_predict' instead of 'max_tokens'
+            num_predict: 300,
           },
         }),
       })
   
       if (!response.ok) {
-        throw new Error(`AI service error: ${response.statusText}`)
+        const errorBody = await response.text(); // Get more details from the error
+        throw new Error(`AI service error: ${response.statusText} - ${errorBody}`)
       }
   
       const data = await response.json()

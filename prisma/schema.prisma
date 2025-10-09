@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -27,11 +21,13 @@ model User {
   accounts Account[]
   role     UserRole  @default(USER)
 
-  myPlayground     Playground[]
-  staredPlayground StarMark[]
+  myPlayground StarMark[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  chatMessages ChatMessage[] // New relation for chat messages
+
+  staredPlayground Playground[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }
 
 model Account {
@@ -64,18 +60,16 @@ enum Templates {
 }
 
 model Playground {
-  id          String     @id @default(cuid()) @map("_id")
-  title       String
-  description String?
-  template    Templates  @default(REACT)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  Starmark    StarMark[]
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id            String         @id @default(cuid()) @map("_id")
+  title         String
+  description   String?
+  template      Templates      @default(REACT)
   templateFiles TemplateFile[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  Starmark      StarMark[]
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model StarMark {
@@ -91,10 +85,23 @@ model StarMark {
 }
 
 model TemplateFile {
-  id           String   @id @default(cuid()) @map("_id")
+  id           String     @id @default(cuid()) @map("_id")
   content      Json
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  playgroundId String   @unique
-  playground Playground @relation(fields: [playgroundId] , references: [id] , onDelete:Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  playgroundId String     @unique
+  playground   Playground @relation(fields: [playgroundId], references: [id], onDelete: Cascade)
+}
+
+// New model for AI chat messages
+model ChatMessage {
+  id        String   @id @default(cuid()) @map("_id")
+  userId    String
+  role      String // "user" or "assistant"
+  content   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
