@@ -1,5 +1,3 @@
----
-
 # 🚀 AI Vibe Code Editor
 
 **VibeCode Editor** is a next-generation, web-based IDE that brings the full power of modern development tools to your browser.
@@ -138,5 +136,3 @@ Contributions are welcome!
 
 **Kushagra Singh**
 💼 [GitHub](https://github.com/kushagrasingh001)
-
----
