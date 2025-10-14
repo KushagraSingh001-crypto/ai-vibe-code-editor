@@ -183,6 +183,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
         
         const startProcess = await instance.spawn("npm", ["run", "start"]);
 
+
         // Listen for server ready event
         instance.on("server-ready", (port: number, url: string) => {
           console.log(`Server ready on port ${port} at ${url}`);
