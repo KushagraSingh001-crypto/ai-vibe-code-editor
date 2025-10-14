@@ -14,20 +14,17 @@ enum UserRole {
 }
 
 model User {
-  id       String    @id @default(cuid()) @map("_id")
-  name     String?
-  email    String    @unique
-  image    String?
-  accounts Account[]
-  role     UserRole  @default(USER)
-
-  myPlayground StarMark[]
-
-  chatMessages ChatMessage[] // New relation for chat messages
-
+  id               String        @id @default(cuid()) @map("_id")
+  name             String?
+  email            String        @unique
+  image            String?
+  accounts         Account[]
+  role             UserRole      @default(USER)
+  myPlayground     StarMark[]
+  chatMessages     ChatMessage[]
   staredPlayground Playground[]
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 }
 
 model Account {
@@ -43,8 +40,7 @@ model Account {
   scope             String?
   idToken           String? @map("id_token")
   sessionState      String? @map("session_state")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -60,16 +56,17 @@ enum Templates {
 }
 
 model Playground {
-  id            String         @id @default(cuid()) @map("_id")
-  title         String
-  description   String?
-  template      Templates      @default(REACT)
-  templateFiles TemplateFile[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  Starmark      StarMark[]
-  userId        String
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String         @id @default(cuid()) @map("_id")
+  title        String
+  description  String?
+  template     String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Starmark     StarMark[]
+  githubRepo   GitHubRepo?
+  TemplateFile TemplateFile[]
 }
 
 model StarMark {
@@ -93,15 +90,26 @@ model TemplateFile {
   playground   Playground @relation(fields: [playgroundId], references: [id], onDelete: Cascade)
 }
 
-// New model for AI chat messages
 model ChatMessage {
   id        String   @id @default(cuid()) @map("_id")
   userId    String
-  role      String // "user" or "assistant"
+  role      String
   content   String
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model GitHubRepo {
+  id           String     @id @default(cuid()) @map("_id")
+  playgroundId String     @unique
+  playground   Playground @relation(fields: [playgroundId], references: [id], onDelete: Cascade)
+  repoOwner    String
+  repoName     String
+  branch       String     @default("main")
+  accessToken  String?
+  lastSynced   DateTime   @default(now())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
