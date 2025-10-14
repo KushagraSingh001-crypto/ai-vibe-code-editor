@@ -1,5 +1,3 @@
-Of course. Here is a comprehensive README file for your GitHub project, "VibeCode Editor." It highlights the key features, tech stack, and provides clear instructions for setup and local development.
-
 🚀 VibeCode Editor: An Intelligent, Web-Based Code Playground
 VibeCode Editor is a next-generation, in-browser IDE built with Next.js, offering a complete development environment right in your web browser. Powered by WebContainers, it provides a live-running Node.js server, an interactive terminal, and a powerful AI assistant to supercharge your coding workflow. From instant project scaffolding to importing full GitHub repositories, VibeCode is designed to make coding more accessible, intelligent, and efficient.
 
