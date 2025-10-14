@@ -40,7 +40,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
   const [setupError, setSetupError] = useState<string | null>(null);
   const [isSetupComplete, setIsSetupComplete] = useState(false);
   const [isSetupInProgress, setIsSetupInProgress] = useState(false);
-  
+
   // Ref to access terminal methods
   const terminalRef = useRef<any>(null);
 
@@ -69,7 +69,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
       try {
         setIsSetupInProgress(true);
         setSetupError(null);
-        
+
         // Check if server is already running by testing if files are already mounted
         try {
           const packageJsonExists = await instance.fs.readFile('package.json', 'utf8');
@@ -78,7 +78,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
             if (terminalRef.current?.writeToTerminal) {
               terminalRef.current.writeToTerminal("🔄 Reconnecting to existing WebContainer session...\r\n");
             }
-            
+
             // Check if server is already running
             instance.on("server-ready", (port: number, url: string) => {
               console.log(`Reconnected to server on port ${port} at ${url}`);
@@ -94,7 +94,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
               setIsSetupComplete(true);
               setIsSetupInProgress(false);
             });
-            
+
             setCurrentStep(4);
             setLoadingState((prev) => ({ ...prev, starting: true }));
             return;
@@ -102,11 +102,11 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
         } catch (e) {
           // Files don't exist, proceed with normal setup
         }
-        
+
         // Step 1: Transform data
         setLoadingState((prev) => ({ ...prev, transforming: true }));
         setCurrentStep(1);
-        
+
         // Write to terminal
         if (terminalRef.current?.writeToTerminal) {
           terminalRef.current.writeToTerminal("🔄 Transforming template data...\r\n");
@@ -126,9 +126,13 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
         if (terminalRef.current?.writeToTerminal) {
           terminalRef.current.writeToTerminal("📁 Mounting files to WebContainer...\r\n");
         }
-        
+
         await instance.mount(files);
-        
+        const rootDir = templateData.folderName;
+        if (!rootDir) {
+          throw new Error("Template data is missing a root folder name.");
+        }
+
         if (terminalRef.current?.writeToTerminal) {
           terminalRef.current.writeToTerminal("✅ Files mounted successfully\r\n");
         }
@@ -144,13 +148,18 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
         if (terminalRef.current?.writeToTerminal) {
           terminalRef.current.writeToTerminal("📦 Installing dependencies...\r\n");
         }
-        
-        const installProcess = await instance.spawn("npm", ["install"]);
+
+        const installProcess = await instance.spawn('jsh', [
+          '-c', 
+          `cd "/${rootDir}" && npm install --legacy-peer-deps`
+      ]);
 
         // Stream install output to terminal
+        let installOutput = "";
         installProcess.output.pipeTo(
           new WritableStream({
             write(data) {
+              installOutput += data; // Collect the output
               // Write directly to terminal
               if (terminalRef.current?.writeToTerminal) {
                 terminalRef.current.writeToTerminal(data);
@@ -162,9 +171,11 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
         const installExitCode = await installProcess.exit;
 
         if (installExitCode !== 0) {
-          throw new Error(`Failed to install dependencies. Exit code: ${installExitCode}`);
+          // Throw a much more detailed error
+          throw new Error(
+            `Failed to install dependencies. Exit code: ${installExitCode}\n\n----- NPM Log -----\n${installOutput}`
+          );
         }
-
         if (terminalRef.current?.writeToTerminal) {
           terminalRef.current.writeToTerminal("✅ Dependencies installed successfully\r\n");
         }
@@ -180,9 +191,11 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
         if (terminalRef.current?.writeToTerminal) {
           terminalRef.current.writeToTerminal("🚀 Starting development server...\r\n");
         }
-        
-        const startProcess = await instance.spawn("npm", ["run", "start"]);
 
+        const startProcess = await instance.spawn('jsh', [
+          '-c',
+          `cd "/${rootDir}" && npm run start`
+      ]);
 
         // Listen for server ready event
         instance.on("server-ready", (port: number, url: string) => {
@@ -214,11 +227,11 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
       } catch (err) {
         console.error("Error setting up container:", err);
         const errorMessage = err instanceof Error ? err.message : String(err);
-        
+
         if (terminalRef.current?.writeToTerminal) {
           terminalRef.current.writeToTerminal(`❌ Error: ${errorMessage}\r\n`);
         }
-        
+
         setSetupError(errorMessage);
         setIsSetupInProgress(false);
         setLoadingState({
@@ -283,13 +296,12 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
   const getStepText = (stepIndex: number, label: string) => {
     const isActive = stepIndex === currentStep;
     const isComplete = stepIndex < currentStep;
-    
+
     return (
-      <span className={`text-sm font-medium ${
-        isComplete ? 'text-green-600' : 
-        isActive ? 'text-blue-600' : 
-        'text-gray-500'
-      }`}>
+      <span className={`text-sm font-medium ${isComplete ? 'text-green-600' :
+          isActive ? 'text-blue-600' :
+            'text-gray-500'
+        }`}>
         {label}
       </span>
     );
@@ -300,7 +312,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
       {!previewUrl ? (
         <div className="h-full flex flex-col">
           <div className="w-full max-w-md p-6 m-5 rounded-lg bg-white dark:bg-zinc-800 shadow-sm mx-auto">
-           
+
 
             <Progress
               value={(currentStep / totalSteps) * 100}
@@ -329,7 +341,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
 
           {/* Terminal */}
           <div className="flex-1 p-4">
-            <TerminalComponent 
+            <TerminalComponent
               ref={terminalRef}
               webContainerInstance={instance}
               theme="dark"
@@ -347,10 +359,10 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
               title="WebContainer Preview"
             />
           </div>
-          
+
           {/* Terminal at bottom when preview is ready */}
           <div className="h-64 border-t">
-            <TerminalComponent 
+            <TerminalComponent
               ref={terminalRef}
               webContainerInstance={instance}
               theme="dark"
