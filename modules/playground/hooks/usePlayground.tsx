@@ -34,7 +34,7 @@ export const usePlayground = (id: string): UsePlaygroundReturn => {
             const data = await getPlaygroundById(id)
             //@ts-ignore
             setPlaygroundData(data)
-            const rawContent = data?.templateFiles?.[0]?.content
+            const rawContent = data?.TemplateFile?.content
             if (typeof rawContent === "string") {
                 const parsedContent = JSON.parse(rawContent)
                 setTemplateData(parsedContent)
