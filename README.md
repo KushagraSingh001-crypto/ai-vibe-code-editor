@@ -140,6 +140,3 @@ Contributions are welcome!
 💼 [GitHub](https://github.com/kushagrasingh001)
 
 ---
-
-Would you like me to include **screenshots / badges / demo GIF sections** (for example: “🚀 Live Demo”, “📸 Preview”, “🛠 Built With Badges”)?
-They make your GitHub README stand out more.
