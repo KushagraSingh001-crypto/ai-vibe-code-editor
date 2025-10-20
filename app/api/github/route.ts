@@ -40,7 +40,7 @@ async function fetchRepoContents(owner: string, repo: string, path: string = "")
         path: item.path,
       });
 
-      // @ts-ignore
+      // @ts-ignore-error
       const content = Buffer.from(fileContentResponse.data.content, "base64").toString("utf-8");
       
       const pathParts = item.name.split(".");
