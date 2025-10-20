@@ -8,10 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Copy, Trash2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Terminal } from "xterm";
-import { FitAddon } from "xterm-addon-fit";
-import { WebLinksAddon } from "xterm-addon-web-links";
-import { SearchAddon } from "xterm-addon-search";
 
 interface TerminalProps {
   className?: string;
@@ -31,8 +27,8 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
   webContainerInstance
 }, ref) => {
   const terminalRef = useRef<HTMLDivElement>(null);
-  const term = useRef<Terminal | null>(null);
-  const fitAddon = useRef<FitAddon | null>(null);
+  const term = useRef<any>(null);
+  const fitAddon = useRef<any>(null);
 
   const terminalThemes = {
     dark: { background: "#09090B", foreground: "#FAFAFA", cursor: "#FAFAFA", cursorAccent: "#09090B", selection: "#27272A", black: "#18181B", red: "#EF4444", green: "#22C55E", yellow: "#EAB308", blue: "#3B82F6", magenta: "#A855F7", cyan: "#06B6D4", white: "#F4F4F5", brightBlack: "#3F3F46", brightRed: "#F87171", brightGreen: "#4ADE80", brightYellow: "#FDE047", brightBlue: "#60A5FA", brightMagenta: "#C084FC", brightCyan: "#22D3EE", brightWhite: "#FFFFFF" },
@@ -61,35 +57,41 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
       return;
     }
 
-    // 1. Create the xterm.js terminal UI
-    const terminal = new Terminal({
-      cursorBlink: true,
-      fontFamily: '"Fira Code", "JetBrains Mono", "Consolas", monospace',
-      fontSize: 14,
-      theme: terminalThemes[theme],
-      convertEol: true,
-    });
-    term.current = terminal;
+    (async () => {
+      const [{ Terminal }, { FitAddon }, { WebLinksAddon }, { SearchAddon }] = await Promise.all([
+        import("xterm"),
+        import("xterm-addon-fit"),
+        import("xterm-addon-web-links"),
+        import("xterm-addon-search"),
+      ])
 
-    const fitAddonInstance = new FitAddon();
-    fitAddon.current = fitAddonInstance;
-    
-    terminal.loadAddon(fitAddonInstance);
-    terminal.loadAddon(new WebLinksAddon());
-    terminal.loadAddon(new SearchAddon());
+      // 1. Create the xterm.js terminal UI
+      const terminal = new Terminal({
+        cursorBlink: true,
+        fontFamily: '"Fira Code", "JetBrains Mono", "Consolas", monospace',
+        fontSize: 14,
+        theme: terminalThemes[theme],
+        convertEol: true,
+      });
+      term.current = terminal;
 
-    terminal.open(terminalRef.current);
-    fitAddonInstance.fit();
+      const fitAddonInstance = new FitAddon();
+      fitAddon.current = fitAddonInstance;
+      
+      terminal.loadAddon(fitAddonInstance);
+      terminal.loadAddon(new WebLinksAddon());
+      terminal.loadAddon(new SearchAddon());
 
-    // 2. Spawn a single, persistent shell process (`jsh`)
-    const startShell = async () => {
+      terminal.open(terminalRef.current!);
+      fitAddonInstance.fit();
+      // 2. Spawn a single, persistent shell process (`jsh`)
       const shellProcess = await webContainerInstance.spawn('jsh');
 
       // 3. Pipe the output of the shell process to the terminal UI
       shellProcess.output.pipeTo(
         new WritableStream({
-          write(data) {
-            terminal.write(data);
+          write(data: string) {
+            term.current?.write(data);
           },
         })
       );
@@ -97,12 +99,11 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
       const input = shellProcess.input.getWriter();
 
       // 4. Pipe the input from the terminal UI to the shell process
-      terminal.onData((data) => {
+      terminal.onData((data: string) => {
         input.write(data);
       });
-    };
 
-    startShell();
+    })();
     
     // Fit terminal on resize
     const resizeObserver = new ResizeObserver(() => {
@@ -112,8 +113,10 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
 
     return () => {
       resizeObserver.disconnect();
-      terminal.dispose();
-      term.current = null;
+      if (term.current) {
+        term.current.dispose();
+        term.current = null;
+      }
     };
   }, [webContainerInstance, theme]);
 

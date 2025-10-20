@@ -1,6 +1,35 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { WebContainer } from "@webcontainer/api"
 import { TemplateFolder } from "@/modules/playground/lib/path-to-json";
+
+// Module-scoped singleton guards to ensure only one WebContainer is booted
+let __webcontainerInstance: WebContainer | null = null
+let __webcontainerBootPromise: Promise<WebContainer> | null = null
+
+async function getOrBootWebContainer(): Promise<WebContainer> {
+    if (__webcontainerInstance) {
+        return __webcontainerInstance
+    }
+    if (__webcontainerBootPromise) {
+        return __webcontainerBootPromise
+    }
+    __webcontainerBootPromise = WebContainer.boot()
+        .then((inst) => {
+            __webcontainerInstance = inst
+            return inst
+        })
+        .catch((err) => {
+            // Reset the promise so future calls can retry
+            __webcontainerBootPromise = null
+            throw err
+        })
+    return __webcontainerBootPromise
+}
+
+function clearWebContainerSingleton() {
+    __webcontainerInstance = null
+    __webcontainerBootPromise = null
+}
 
 
 interface UseWebContainerProps {
@@ -21,15 +50,17 @@ export const useWebContainer = ({ templateData }: UseWebContainerProps): UseWebC
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [instance, setInstance] = useState<WebContainer | null>(null);
+    const instanceRef = useRef<WebContainer | null>(null)
 
     useEffect(() => {
         let mounted = true
 
         async function initializeWebContainer() {
             try {
-                const webcontainerInstance = await WebContainer.boot()
+                const webcontainerInstance = await getOrBootWebContainer()
                 if (!mounted) return
                 setInstance(webcontainerInstance)
+                instanceRef.current = webcontainerInstance
                 setIsLoading(false)
             } catch (err) {
                 console.error('Failed to initialize WebContainer:', err);
@@ -42,9 +73,7 @@ export const useWebContainer = ({ templateData }: UseWebContainerProps): UseWebC
         initializeWebContainer()
         return () => {
             mounted = false
-            if (instance) {
-                instance.teardown()
-            }
+            // Do not auto-teardown the singleton here; use destroy() explicitly when needed.
         }
     }, [])
 
@@ -68,12 +97,15 @@ export const useWebContainer = ({ templateData }: UseWebContainerProps): UseWebC
     }, [instance])
 
     const destroy = useCallback(() => {
-        if (instance) {
-            instance.teardown();
+        const target = instanceRef.current
+        if (target) {
+            target.teardown();
+            instanceRef.current = null
             setInstance(null);
             setServerUrl(null);
+            clearWebContainerSingleton()
         }
-    }, [instance])
+    }, [])
     return { serverUrl, isLoading, error, instance, writeFileSync, destroy };
 }
 
