@@ -1,13 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  images:{
-    remotePatterns:[
+  images: {
+    remotePatterns: [
       {
-        protocol:"https",
-        hostname:"*",
-        port:'',
-        pathname:"/**"
+        protocol: "https",
+        hostname: "*",
+        port: '',
+        pathname: "/**"
       }
     ]
   },
@@ -25,11 +25,13 @@ const nextConfig: NextConfig = {
             key: 'Cross-Origin-Embedder-Policy',
             value: 'require-corp',
           },
+          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
+          { key: "Origin-Agent-Cluster", value: "?1" },
         ],
       },
     ];
   },
-  reactStrictMode:false
+  reactStrictMode: false
 };
 
 export default nextConfig;
