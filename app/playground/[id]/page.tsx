@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { TemplateFileTree } from '@/modules/playground/components/playground-explorer'
 import { useFileExplorer } from '@/modules/playground/hooks/useFileExplorer'
 import { TemplateFile, TemplateFolder } from '@/modules/playground/lib/path-to-json'
-import { AlertCircle, Bot, FileText, FolderOpen, Save, Settings, X } from 'lucide-react'
+import { AlertCircle, FileText, FolderOpen, Save, Settings, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -36,7 +36,6 @@ const MainPlaygroundPage = () => {
     closeAllFiles,
     openFile,
     closeFile,
-    editorContent,
     updateFileContent,
     handleAddFile,
     handleAddFolder,
@@ -57,7 +56,7 @@ const MainPlaygroundPage = () => {
     error: containerError,
     instance,
     writeFileSync,
-    // @ts-ignore
+    // @ts-ignore-error
   } = useWebContainer({ templateData });
 
   const lastSyncedContent = useRef<Map<string, string>>(new Map());
@@ -166,8 +165,10 @@ const MainPlaygroundPage = () => {
         const updatedTemplateData = JSON.parse(
           JSON.stringify(latestTemplateData)
         );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateFileContent = (items: any[]): any[] =>
           items.map((item) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if ("folderName" in item) {
               return { ...item, items: updateFileContent(item.items) };
             } else if (
